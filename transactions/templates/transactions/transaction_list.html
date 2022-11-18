@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}OMGBudget | Transactions{% endblock %}
+
+{% block content %}
+ 
+				<h1>{{ object_list|length }} Transactions</h1>
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th scope="col">Date</th>
+                      <th scope="col">Amount</th>
+                      <th scope="col">Description</th>
+                      <th scope="col">Other Party</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for a in object_list %}
+                    <tr>
+                      <th scope="row">{{ a.trans_date }}</th>
+                      <td>{{ a.amount }}</td>
+                      <td>{{ a.description }}</td>
+                      <td>{{ a.other_party }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                      <th scope="row">None</th>
+                      <td>None</td>
+                      <td>None</td>
+                      <td>None</td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+{% endblock %}

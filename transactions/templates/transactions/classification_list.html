@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block title %}OMGBudget | Classifications{% endblock %}
+
+{% block content %}
+ 
+				<h1>{{ object_list|length }} Classifications</h1>
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th scope="col">Name</th>
+                      <th scope="col">Classify_as</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for a in object_list %}
+                    <tr>
+                      <th scope="row">{{ a.name }}</th>
+                      <td>{{ a.classify_as }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                      <th scope="row">None</th>
+                      <td>None</td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+{% endblock %}

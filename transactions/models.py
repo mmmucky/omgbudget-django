@@ -1,6 +1,34 @@
 from django.db import models
 
+# SQLAlchemy version
+#class Classification(db.Model):
+#    __tablename__ = "classifications"
+#    id = db.Column(db.Integer, primary_key=True)
+#    name = db.Column(db.String(128))
+#    classify_as = db.Column(db.String(128))
+#    always_report = db.Column(db.Boolean)
+#    regexes = relationship("Regex")
+#    transactions = relationship("Transaction")
+#
+#    def __init__(self, name, classify_as=None, always_report=None):
+#        self.name = name
+#        self.classify_as = classify_as
+#        self.always_report = always_report
 
+class Classification(models.Model):
+    name   = models.CharField(max_length=200)
+    classify_as   = models.CharField(max_length=200)
+    always_report = models.CharField(max_length=200)
+
+    def __str__(self):
+        return f'{self.name}'
+
+class ClassificationRegex(models.Model):
+    regex   = models.CharField(max_length=200)
+    classification = models.ForeignKey(Classification, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f'{self.regex}'
 
 class Transaction(models.Model):
     description   = models.CharField(max_length=200)
@@ -10,6 +38,9 @@ class Transaction(models.Model):
     analysis_code = models.CharField(max_length=200)
     trans_date    = models.DateTimeField('Transaction Date')
     amount = models.DecimalField(max_digits=10, decimal_places=2)
+
+    def __str__(self):
+        return f'{self.amount} {self.other_party} {self.trans_date}'
 
 
 # as described in sqlalchemy
