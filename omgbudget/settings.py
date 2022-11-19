@@ -26,12 +26,17 @@ SECRET_KEY = 'django-insecure-)uvqo%d0-g=vba7^_0)i-$7h4eoea%u#b1c=cq)o$7azwlg9jq
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
+# Assets Management
+ASSETS_ROOT = os.getenv('ASSETS_ROOT', '/static/assets')
+
 ALLOWED_HOSTS = ['localhost']
+
 
 
 # Application definition
 
 INSTALLED_APPS = [
+    'transactions.apps.TransactionsConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',

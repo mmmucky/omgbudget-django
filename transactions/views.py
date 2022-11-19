@@ -1,6 +1,7 @@
 import csv
 import datetime
 import io
+import re
 import yaml
 
 from django.utils import timezone
@@ -53,10 +54,31 @@ def handle_uploaded_classifications(f):
     y = yaml.load(io.StringIO(f.read().decode("utf-8")), Loader=yaml.FullLoader)
     for bucket in y['expense_buckets']:
         print(bucket)
-        c = Classification.objects.get_or_create(name=bucket['name'], classify_as=bucket['classify_as'])
+        c = Classification.objects.get_or_create(name=bucket['name'], classify_as=bucket['classify_as'])[0]
         print(c)
         for regex in bucket['regexes']:
             print(regex)
+            print(c)
+            print(dir(c))
+            r = ClassificationRegex.objects.get_or_create(regex=regex, classification=c)
+    do_update_classifications()
+
+def do_update_classifications():
+    # TODO: wipe all classifications to start, or detect/update existing state?
+    transactions = Transaction.objects.all()
+    classifications = Classification.objects.all()
+    # Pre-compile all REs once and keep a list of (ORM object, compiled RE) tuples
+    regexes = [(r, re.compile(r.regex)) for r in ClassificationRegex.objects.all()]
+
+    print(f'Loaded {len(transactions)} transactions')
+    print(f'Loaded {len(classifications)} classifications')
+    print(f'Loaded {len(regexes)} regexes')
+    # get a list of all regexes
+    for t in transactions:
+        for r, compiled_re in regexes:
+            if re.match(compiled_re,t.other_party):
+                print(f'{t} matched {r}')
+                t.classifications.add(r.classification)
 
 ## Don't let anyone submit files.
 def handle_uploaded_file(f):

@@ -14,15 +14,18 @@
                   </thead>
                   <tbody>
                     {% for a in object_list %}
+                    {% for r in a.classificationregex_set.all %}
+
                     <tr>
                       <th scope="row">{{ a.name }}</th>
-                      <td>{{ a.classify_as }}</td>
+                      <td>{{ a.classify_as }} {{ r }}</td>
                     </tr>
                     {% empty %}
                     <tr>
                       <th scope="row">None</th>
                       <td>None</td>
                     </tr>
+                    {% endfor %}
                     {% endfor %}
                   </tbody>
                 </table>

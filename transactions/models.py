@@ -38,6 +38,7 @@ class Transaction(models.Model):
     analysis_code = models.CharField(max_length=200)
     trans_date    = models.DateTimeField('Transaction Date')
     amount = models.DecimalField(max_digits=10, decimal_places=2)
+    classifications = models.ManyToManyField(Classification)
 
     def __str__(self):
         return f'{self.amount} {self.other_party} {self.trans_date}'
