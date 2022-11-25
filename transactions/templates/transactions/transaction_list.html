@@ -8,23 +8,29 @@
                 <table class="table">
                   <thead>
                     <tr>
+                      <th scope="col">ID</th>
                       <th scope="col">Date</th>
                       <th scope="col">Amount</th>
                       <th scope="col">Description</th>
                       <th scope="col">Other Party</th>
+                      <th scope="col">Classifications</th>
                     </tr>
                   </thead>
                   <tbody>
                     {% for a in object_list %}
                     <tr>
-                      <th scope="row">{{ a.trans_date }}</th>
+                      <th scope="row">{{ a.id }}</th>
+                      <td>{{ a.trans_date }}</td>
                       <td>{{ a.amount }}</td>
                       <td>{{ a.description }}</td>
                       <td>{{ a.other_party }}</td>
+                      <td>{{ a.classifications.all }}</td>
                     </tr>
                     {% empty %}
                     <tr>
                       <th scope="row">None</th>
+                      <td>None</td>
+                      <td>None</td>
                       <td>None</td>
                       <td>None</td>
                       <td>None</td>
