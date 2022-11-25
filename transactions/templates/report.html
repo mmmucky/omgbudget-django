@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}OMGBudget | Report{% endblock %}
+
+{% block content %}
+ 
+				<h1>Report for {{ month }}/{{ year }}</h1>
+				<h1>Total in: {{ total_in }}</h1>
+				<h1>Total out: {{ total_out }}</h1>
+                {% for k, v in transactions_by_classification.items %}
+				<h2>{{k}} {{expense_bucket_in.k}} {{expense_bucket_out.k}}</h2>
+				{% if list_transactions %}
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th scope="col">ID</th>
+                      <th scope="col">Date</th>
+                      <th scope="col">Amount</th>
+                      <th scope="col">Description</th>
+                      <th scope="col">Other Party</th>
+                      <th scope="col">Classifications</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for a in v %}
+                    <tr>
+                      <th scope="row">{{ a.id }}</th>
+                      <td>{{ a.trans_date }}</td>
+                      <td>{{ a.amount }}</td>
+                      <td>{{ a.description }}</td>
+                      <td>{{ a.other_party }}</td>
+                      <td>{{ a.classifications.all }}</td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+				{% endif %}
+                {% endfor %}
+{% endblock %}

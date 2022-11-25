@@ -15,5 +15,7 @@ urlpatterns = [
         views.upload_classifications,
         name="upload_classifications",
     ),
+    path("reports/", views.report_list),
+    path("reports/<int:year>/<int:month>/", views.report),
     path("home/", views.home, name="home"),
 ]

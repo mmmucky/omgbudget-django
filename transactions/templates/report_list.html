@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}OMGBudget | Reports{% endblock %}
+
+{% block content %}
+ 
+				<h1>Reports</h1>
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th scope="col">Report Month</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for a in sorted_months %}
+                    <tr>
+                      <th scope="row"><a href="{{ a }}" class="link-secondary">{{ a }}</a></th>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                      <th scope="row">None</th>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+{% endblock %}
