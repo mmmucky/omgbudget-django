@@ -3,12 +3,30 @@
 {% block title %}OMGBudget | Report{% endblock %}
 
 {% block content %}
- 
 				<h1>Report for {{ month }}/{{ year }}</h1>
-				<h1>Total in: {{ total_in }}</h1>
-				<h1>Total out: {{ total_out }}</h1>
-                {% for k, v in transactions_by_classification.items %}
-				<h2>{{k}} {{expense_bucket_in.k}} {{expense_bucket_out.k}}</h2>
+				<h3>Total in: {{ total_in }}</h3>
+				<h3>Total out: {{ total_out }}</h3>
+				<h2>Summary</h2>
+
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th scope="col">Expense</th>
+                      <th scope="col">Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                  {% for bucket, amount in expense_summary %}
+                    <tr>
+                      <th scope="row" class="user-select-none">{{ bucket }}</th>
+                      <td class="user-select-auto">{{ amount }}</td>
+                    </tr>
+                  {% endfor %}
+                  </tbody>
+                </table>
+
+                {% for bucket, v in transactions_by_classification.items %}
+				<h2>{{bucket}} {{v.total_in}} {{v.total_out}}</h2>
 				{% if list_transactions %}
                 <table class="table">
                   <thead>
@@ -22,14 +40,14 @@
                     </tr>
                   </thead>
                   <tbody>
-                    {% for a in v %}
+                    {% for a in v.transactions %}
                     <tr>
                       <th scope="row">{{ a.id }}</th>
                       <td>{{ a.trans_date }}</td>
                       <td>{{ a.amount }}</td>
                       <td>{{ a.description }}</td>
                       <td>{{ a.other_party }}</td>
-                      <td>{{ a.classifications.all }}</td>
+                      <td>{{ a.classifications.all.0|default:"None" }}</td>
                     </tr>
                     {% endfor %}
                   </tbody>

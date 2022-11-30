@@ -9,6 +9,7 @@ urlpatterns = [
         views.ClassificationView.as_view(),
         name="classification_list",
     ),
+    path("clean/", views.clean, name="clean"),
     path("upload/", views.upload_file, name="upload"),
     path(
         "upload_classifications/",

@@ -87,6 +87,7 @@ def do_update_classifications():
                 t.classifications.add(r.classification)
                 t.save()
 
+
 def last_day_of_month(any_day):
     next_month = any_day.replace(day=28) + datetime.timedelta(days=4)
     return next_month - datetime.timedelta(days=next_month.day)
@@ -96,14 +97,26 @@ def last_day_of_month(any_day):
 def expense_trends(request):
     pass
 
+
 def report_list(request):
-    ''' return an index of all valid report periods.  '''
+    """ return an index of all valid report periods.  """
     html_template = loader.get_template("report_list.html")
     context = {}
     months = set()
     for transaction in Transaction.objects.all():
-        months.add(transaction.trans_date.strftime('%Y/%m'))
-    context['sorted_months'] = sorted(months)
+        months.add(transaction.trans_date.strftime("%Y/%m"))
+    context["sorted_months"] = sorted(months)
+    return HttpResponse(html_template.render(context, request))
+
+def clean(request):
+    html_template = loader.get_template("clean.html")
+    i = Transaction.objects.all()
+    j = Classification.objects.all()
+    k = ClassificationRegex.objects.all()
+    context = {'transactions': len(i), 'classifications': len(j), 'classificationregexes':len(k)}
+    i.delete()
+    j.delete()
+    k.delete()
     return HttpResponse(html_template.render(context, request))
 
 def report(request, year, month):
@@ -111,25 +124,47 @@ def report(request, year, month):
     last_of_month = last_day_of_month(first_of_month)
 
     html_template = loader.get_template("report.html")
-    context = {'year': year, 'month': month, 'list_transactions': False}
+    context = {"year": year, "month": month, "list_transactions": True}
 
     # A set of expenses to *always* report on.
-    # Always report these in the order provided, for easy month-to-month 
+    # Always report these in the order provided, for easy month-to-month
     # TODO: move to database
     # TODO: classify_as should be a property of a report, not a transaction
     # TODO: when there are multiple classifications, take the one that matches the longest substring of the transaction name?
-    bucket_report_order = ['mortgage', 'house', 'groceries', 'food', 'bills', 'dog', 'unknown', 'other', 'entertainment', 'hair', 'shopping', 'rent', 'savings', 'term-deposit', 'transport', 'travel']
+    bucket_report_order = [
+        "mortgage",
+        "house",
+        "groceries",
+        "food",
+        "bills",
+        "dog",
+        "unknown",
+        "other",
+        "entertainment",
+        "hair",
+        "shopping",
+        "rent",
+        "savings",
+        "term-deposit",
+        "transport",
+        "travel",
+    ]
     # Track classifications observed over this report period
     classifications_seen = []
     # Build a dict that maps classification to lists of transactions during report period. (TODO: can the ORM do this via a GROUP BY style query?)
-    transactions_by_classification = defaultdict(list)
+    transactions_by_classification = {}
 
-    print('generating monthly summary...')
-    context['total_in'] = 0
-    context['total_out'] = 0
+    print("generating monthly summary...")
+    context["total_in"] = 0
+    context["total_out"] = 0
 
-    transactions = Transaction.objects.filter(trans_date__range=[first_of_month.strftime("%Y-%m-%d"), last_of_month.strftime("%Y-%m-%d")])
-    context['transactions'] = transactions
+    transactions = Transaction.objects.filter(
+        trans_date__range=[
+            first_of_month.strftime("%Y-%m-%d"),
+            last_of_month.strftime("%Y-%m-%d"),
+        ]
+    )
+    context["transactions"] = transactions
     expense_bucket_in = defaultdict(int)
     expense_bucket_out = defaultdict(int)
 
@@ -139,54 +174,78 @@ def report(request, year, month):
     for transaction in transactions:
         print(transaction)
         print(transaction.classifications.all())
-        bucket = ''
+        bucket = ""
         transaction_classifications = transaction.classifications.all()
         if transaction_classifications:
-            bucket = transaction_classifications[0].classify_as or transaction_classifications[0].name
-            print(f'{transaction_classifications[0]} {transaction_classifications[0].classify_as}')
+            bucket = (
+                transaction_classifications[0].classify_as
+                or transaction_classifications[0].name
+            )
+            print(
+                f"{transaction_classifications[0]} {transaction_classifications[0].classify_as}"
+            )
         else:
-            bucket = 'unknown'
-        transactions_by_classification[bucket].append(transaction)
+            bucket = "unknown"
+        if not bucket in transactions_by_classification:
+            transactions_by_classification[bucket] = {
+                "transactions": [],
+                "total_in": 0,
+                "total_out": 0,
+            }
+        transactions_by_classification[bucket]["transactions"].append(transaction)
 
         if transaction.amount > 0:
             credits.append(transaction)
-            context['total_in'] += transaction.amount
+            context["total_in"] += transaction.amount
             expense_bucket_in[bucket] += transaction.amount
+            transactions_by_classification[bucket]["total_in"] += transaction.amount
         else:
-            context['total_out'] += transaction.amount
+            context["total_out"] += transaction.amount
             expense_bucket_out[bucket] += transaction.amount
-    context['expense_bucket_in'] = expense_bucket_in
-    context['expense_bucket_out'] = expense_bucket_out
-    context['expense_bucket_in'].default_factory = None
-    context['expense_bucket_out'].default_factory = None
-    context['transactions_by_classification'] = transactions_by_classification
-    context['transactions_by_classification'].default_factory = None
+            transactions_by_classification[bucket]["total_out"] += transaction.amount
 
+    # an ordered list of expenses and net spend for this report period
+    expense_summary = []
+    for bucket in bucket_report_order:
+        if bucket in transactions_by_classification:
+            net_spend = transactions_by_classification[bucket]["total_in"] + transactions_by_classification[bucket]["total_out"]
+        else:
+            net_spend = 0
+        expense_summary.append((bucket, net_spend))
+    for bucket in transactions_by_classification.keys():
+        if not bucket in bucket_report_order:
+            net_spend =  transactions_by_classification[bucket]["total_in"] + transactions_by_classification[bucket]["total_out"]
+            expense_summary.append((bucket, net_spend))
+        
+    context["expense_summary"] = expense_summary
+    context["transactions_by_classification"] = transactions_by_classification
     return HttpResponse(html_template.render(context, request))
 
-#    1. Get all range of transactions to report on (typically monthly)
-#    transactions = db.session.query(Transaction).filter(extract('year', Transaction.trans_date)==year).filter(extract('month', Transaction.trans_date)==month).all()
+    #    1. Get all range of transactions to report on (typically monthly)
+    #    transactions = db.session.query(Transaction).filter(extract('year', Transaction.trans_date)==year).filter(extract('month', Transaction.trans_date)==month).all()
 
-#    2. pre-fetch  classifications
-#    #classifications = db.session.query(Classification).all()
+    #    2. pre-fetch  classifications
+    #    #classifications = db.session.query(Classification).all()
 
-#   # Create a set of expense buckets to track totals 
+    #   # Create a set of expense buckets to track totals
     expense_bucket_totals = defaultdict(int)
 
     # Sometimes we want to just print a list of all incoming money.
     credits = []
     classifications = set()
+
+
 #    # For each transaction
 #    for transaction in transactions:
-         # Keep a total of money in and out.
+# Keep a total of money in and out.
 #        if transaction.amount > 0:
 #            credits.append(transaction)
 #            total_in += transaction.amount
 #        else:
 #            total_out += transaction.amount
-         # 1. Determine classification
-         # 2. update totals
-         # 3. track encountered classifications
+# 1. Determine classification
+# 2. update totals
+# 3. track encountered classifications
 #        if transaction.classification:
 #            classify_as = transaction.classification.classify_as or transaction.classification.name
 #            expense_bucket_totals[classify_as] += transaction.amount
@@ -196,7 +255,7 @@ def report(request, year, month):
 #        classifications.add(classify_as)
 #        print(f'{transaction.amount} - {transaction.other_party} - {classify_as}')
 #
-#    # 
+#    #
 #    for bucket in bucket_report_order:
 #        print(f'{bucket} {expense_bucket_totals[bucket]:.0f}')
 #
@@ -211,7 +270,6 @@ def report(request, year, month):
 #    # print total in
 #    print(f'total in: {total_in}')
 #    print(f'total out: {total_out}')
-
 
 
 ## Don't let anyone submit files.
@@ -247,6 +305,7 @@ def handle_uploaded_file(f):
             particulars=row[5],
             analysis_code=row[6],
         )
+    do_update_classifications()
 
 
 def upload_classifications(request):
@@ -265,6 +324,9 @@ def upload_classifications(request):
         return HttpResponse(html_template.render(context, request))
 
 
+# TODO: transactions change over time, when they haven't fully posted yet
+# 28/11/2022,-12.00,"City Chic Collect 24","DEBIT",,"************","0440"
+# 26/11/2022,-12.00,"City Chic Collective","EFTPOS TRANSACTION","24/11 17:40","524651******","0440"
 def upload_file(request):
     if request.method == "POST":
         form = UploadTransactionsForm(request.POST, request.FILES)
